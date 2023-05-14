@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bet Calculator</title>
+    <link rel="stylesheet" type="text/css" href="./form.css">
+    <style>
+	    	h3 {
+	  text-align: center;
+	  font-size: 24px;
+	  font-weight: bold;
+	  margin-top: 40px;
+	  margin-bottom: 20px;
+	  color: green;
+	}
+    </style>
+
+</head>
+<body>
+    <h3>tennis - betting . generate all possible possible bets</h3>
+    
+      <form>
+    <label for="player-a-name">Player A Name:</label>
+    <input type="text" id="player-a-name" name="player-a-name" required>
+    <label for="player-a-odd">Player A Odd:</label>
+    <input type="text" id="player-a-odd" name="player-a-odd" required>
+
+    <label for="player-b-name">Player B Name:</label>
+    <input type="text" id="player-b-name" name="player-b-name" required>
+    <label for="player-b-odd">Player B Odd:</label>
+    <input type="text" id="player-b-odd" name="player-b-odd" required>
+
+    <input type="button" value="Submit" onclick="addMatch()">
+  </form>
+
+  <button onclick="clearLocalStorage()">Clear Local Storage</button>  
+  <div id="output"><div>
+
+
+    
+<script type="text/javascript">
+    // function to calculate total odds for a bet
+    function calculate_total_odds(bet){
+        var total_odds = 1;
+        for(var odds in bet){
+            total_odds *= bet[odds];
+        }
+        return total_odds;
+    }
+
+// function to generate all possible bets given a list of matches and their odds
+function generate_possible_bets(matches, currentIndex = 0){
+    var possible_bets = [];
+    if(currentIndex === matches.length - 1){
+        // Base case: if at last array in matches, return each element as a bet
+        for(var i=0; i<matches[currentIndex].length; i++){
+            var bet = {};
+            var match = matches[currentIndex][i].split(" (");
+            bet[match[0]] = parseFloat(match[1]);
+            possible_bets.push(bet);
+        }
+    } else {
+        // Recursive case: generate bets for current array and combine with bets for remaining arrays
+        var sub_bets = generate_possible_bets(matches, currentIndex + 1);
+        for(var i=0; i<matches[currentIndex].length; i++){
+            var match = matches[currentIndex][i].split(" (");
+            for(var j=0; j<sub_bets.length; j++){
+                var bet = Object.assign({}, sub_bets[j]);
+                bet[match[0]] = parseFloat(match[1]);
+                possible_bets.push(bet);
+            }
+        }
+    }
+    return possible_bets;
+}
+
+    // sample data
+    var matches = JSON.parse(localStorage.getItem('matches')) || [];
+renderBets();
+
+
+
+    // function to render the possible bets on the page
+function renderBets() {
+    // generate all possible bets
+    var possible_bets = generate_possible_bets(matches);
+
+    // sort possible_bets by total odds, smallest odd first
+    possible_bets.sort(function(a, b) {
+        return calculate_total_odds(a) - calculate_total_odds(b);
+    });
+
+  var outputDiv = document.getElementById('output');
+  // empty the output div
+  outputDiv.innerHTML = '';
+  for (var i = 0; i < possible_bets.length; i++) {
+    var total_odds = calculate_total_odds(possible_bets[i]);
+    var betDiv = document.createElement('div');
+    betDiv.textContent =
+      JSON.stringify(possible_bets[i]) + ' Total Odds: ' + total_odds.toFixed(3);
+    outputDiv.appendChild(betDiv);
+  }
+}
+renderBets();
+
+// add event listener to the form submit button
+document.getElementById('match-form').addEventListener('submit', function (event) {
+  event.preventDefault();
+  var playerAName = document.getElementById('player-a-name').value;
+  var playerAOdd = parseFloat(document.getElementById('player-a-odd').value);
+  var playerBName = document.getElementById('player-b-name').value;
+  var playerBOdd = parseFloat(document.getElementById('player-b-odd').value);
+  var match = {
+    playerA: { name: playerAName, odd: playerAOdd },
+    playerB: { name: playerBName, odd: playerBOdd },
+  };
+  matches.push(match);
+  possible_bets = calculate_possible_bets(matches);
+  renderBets();
+});
+    
+    
+    function addMatch() {
+      const playerAName = document.getElementById("player-a-name").value;
+      const playerAOdd = document.getElementById("player-a-odd").value;
+      const playerBName = document.getElementById("player-b-name").value;
+      const playerBOdd = document.getElementById("player-b-odd").value;
+
+      const match = [`${playerAName} (${playerAOdd})`, `${playerBName} (${playerBOdd})`];
+      matches.push(match);
+      
+       localStorage.setItem('matches', JSON.stringify(matches)); // save to localStorage
+
+      console.log(matches); // or do something else with the matches array here
+      renderBets();
+    }
+    
+    function clearLocalStorage() {
+  localStorage.clear();
+  location.reload();
+}
+</script>
+</body>
+</html>
